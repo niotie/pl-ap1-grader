@@ -1,4 +1,5 @@
 import importlib.util
+import os
 
 import jinja2
 import operator
@@ -189,18 +190,19 @@ class TestSession:
 
     """ Predefined tests """
 
-    def test(self,
+    def test(self, title="", *,
              # execution target
              expression=None, force_reload=False,
              funcname=None, args=None, kwargs=None,
-             # description args
-             title="", descr="", hint="", weight=1,
+             # other description args
+             descr="", hint="", weight=1,
              # context args
              state=None, inputs=None, argv=None,
              # assertion args
              exception=None, values=None, types=None,
-             output=None, outcmp=operator.eq,
-             result=NoReturn, rescmp=operator.eq,
+             functions=None, classes=None,
+             output=None, out_cmp=operator.eq,
+             result=..., res_cmp=operator.eq,
              allow_arg_change=True, allow_global_change=True,
              detect_recursion=False):
         """
@@ -243,8 +245,11 @@ class TestSession:
         self.current_test = test
 
         # Execute student code if required
+
+        code_was_run = False
         if force_reload or self.module is None:
             self.current_test.execute_source()
+            code_was_run = True
 
         # What should we do?
         if expression and funcname:
@@ -255,6 +260,7 @@ class TestSession:
                 test.set_default_title(expression)
             test.expression = expression
             test.evaluate(expression)
+            code_was_run = True
         elif funcname:
             if kwargs is None:
                 kwargs = {}
@@ -263,24 +269,26 @@ class TestSession:
                 test.set_default_title(expression)
             test.expression = expression
             test.call_function(funcname, args, kwargs)
-        elif result is not NoReturn:
+            code_was_run = True
+        elif result is not ...:
             raise GraderError("Vérification du résultat demandée, "
                               "mais pas d'expression ni d'appel à évaluer")
 
         # manage exceptions
-        if exception is not None:
-            # if parameter exception=SomeExceptionClass is passed, silently
-            # check it is indeed raised
-            self.assert_exception(exception)
-        else:
-            # unless some exception is explicitly expected, forbid them
-            self.assert_no_exception()
+        if code_was_run:
+            if exception is not None:
+                # if parameter exception=SomeExceptionClass is passed, silently
+                # check it is indeed raised
+                self.assert_exception(exception)
+            else:
+                # unless some exception is explicitly expected, forbid them
+                self.assert_no_exception()
         # check for evaluation or call result
-        if result is not NoReturn:
-            self.assert_result(result, rescmp)
+        if result is not ...:
+            self.assert_result(result, res_cmp)
         # check for standard output
         if output is not None:
-            self.assert_output(output, outcmp)
+            self.assert_output(output, out_cmp)
         # check global values
         if values is not None:
             # for now we have no facility to check that some variable was
@@ -290,6 +298,9 @@ class TestSession:
             # for now we have no facility to check that some variable was
             # deleted, we only check that some variables exist
             self.assert_variable_types(**types)
+        if functions is not None:
+            for fun in functions:
+                self.assert_defines_function(fun)
         if not allow_global_change:
             # forbid changes to global variables
             self.assert_no_global_change()
@@ -301,18 +312,37 @@ class TestSession:
             self.current_test.detect_recursion(funcname, args, kwargs)
             self.assert_previous_recursion()
 
-    def test_call(self, funcname, *args,
-                  kwargs=None,
-                  reffunc=None,
-                  result=...,
-                  **params):
+    def test_function_code(self, funcname:str,
+                           no_return=False,
+                           no_loop=False, loop_kw=('for', 'while'),
+                           should_call=(),
+                           title="",
+                           **params):
+        if not title:
+            title = f"Vérification de la fonction <code>{funcname}</code>"
+        self.test(title=title, **params)
+        self.assert_defines_function(funcname)
+        if no_return:
+            self.assert_returns_none(funcname)
+        if no_loop:
+            self.assert_no_loop(funcname, loop_kw)
+        if should_call:
+            for callee in should_call:
+                self.assert_calls_function(funcname, callee)
+
+    def test_function_call(self, funcname, *args,
+                           kwargs=None,
+                           reference=None,
+                           result=...,
+                           output="",
+                           **params):
         """
         Test the call `funcname(*args, **kwargs)`.
 
         The call's result is either compared to `result` or to the result of
-        the function `reffunc`. One or the other must be provided.
+        the function `reference`. One or the other must be provided.
 
-        Parameter `reffunc` should be a callable object with no side-effects
+        Parameter `reference` should be a callable object with no side-effects
         **at all**.
 
         Unless otherwise specified in `params`, asserts the absence of
@@ -326,13 +356,13 @@ class TestSession:
 
         if kwargs is None:
             kwargs = {}
-        if reffunc is None and result is ...:
+        if reference is None and result is ...:
             raise GraderError("Test impossible, fournir l'un ou l'autre de "
-                              "result ou reffunc")
-        elif reffunc:
-            result = reffunc(*args, **kwargs)
+                              "result ou reference")
+        elif reference:
+            result = reference(*args, **kwargs)
         self.test(funcname=funcname, args=args, kwargs=kwargs, result=result,
-                  **params)
+                  output=output, **params)
 
     """ Grading """
 
@@ -693,7 +723,7 @@ class Test:
         # perform the call
         def runnable():
             return performs_recursion(lambda: function(*args, **kwargs))
-        self.recursion = self.controlled_run(runnable)
+        self.recursion = self.silent_run(runnable)
 
     def controlled_run(self, runnable):
         # backup previous state
@@ -720,6 +750,24 @@ class Test:
         self.stderr = stderr_stream.getvalue()
 
         # return result
+        return res
+
+    def silent_run(self, runnable):
+        null = open(os.devnull, 'w')
+        tmp = self.current_state
+        self.current_state = deepcopy(tmp)
+
+        try:
+            with mock_input(self.current_inputs.copy(), self.current_state,
+                            verbose=False):
+                with mock.patch.object(sys, 'argv', self.argv):
+                    with mock.patch.object(sys, 'stdout', null):
+                        with mock.patch.object(sys, 'stderr', null):
+                            res = runnable()
+        except Exception as e:
+            res = None
+
+        self.current_state = tmp
         return res
 
     """Assertions."""

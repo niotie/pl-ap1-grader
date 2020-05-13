@@ -1,5 +1,7 @@
 On souhaite écrire une fonction récursive `liste_listes_binaires(n)` renvoyant 
-la liste des mots à `n` caractères dans l'alphabet binaire (`'0'` ou `'1'`). 
+la liste des mots à `n` caractères dans l'alphabet binaire (`'0'` ou `'1'`), 
+dans l'ordre lexicographique.
+ 
 Par exemple:
 
     >>> liste_listes_binaires(2)

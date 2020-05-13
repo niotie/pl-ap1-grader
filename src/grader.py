@@ -16,6 +16,7 @@
 # TODO: error details in assertion feedback (line number, etc.)
 # TODO: new assertions
 #  - forbid calls to some function
+#  - forbid all or specific imports
 #  - count the number of "if"s in the code (ast)
 #  - forbid assignments (ast)
 #  - forbid global change to parameter values (lists...)
