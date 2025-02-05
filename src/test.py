@@ -234,14 +234,10 @@ class TestSession:
             test_params.update(self.current_test_group.params)
 
         self.test_number += 1
-        self.current_test = Test(self, self.test_number,
-                                 weight=weight, title=title,
-                                 **test_params)
-
         test = Test(self, self.test_number,
                     title=title, descr=descr, hint=hint, weight=weight,
                     state=state, inputs=inputs, argv=argv,
-                    **self.params)
+                    **test_params)
         self.current_test = test
 
         # Execute student code if required
@@ -311,6 +307,9 @@ class TestSession:
             # detect recursion (only valid for calls or expressions)
             self.current_test.detect_recursion(funcname, args, kwargs)
             self.assert_previous_recursion()
+
+    def test_program(self, output):
+        ... # TODO
 
     def test_function_code(self, funcname:str,
                            no_return=False,
@@ -668,26 +667,25 @@ class Test:
     """Code execution."""
 
     def backup_state(self):
+        """
         if self.session.module is not None:
             self.previous_state = deepcopy(self.session.module.__dict__)
         else:
             self.previous_state = {}
+        """
+        self.previous_state = deepcopy(self.current_state)
         self.previous_inputs = self.current_inputs.copy()
 
     def execute_source(self) -> NoReturn:
 
-        if self.session.module is None:
-            modname = 'studentmod'
-            spec = importlib.util.spec_from_loader(modname, loader=None)
-            self.session.module = importlib.util.module_from_spec(spec)
-            self.current_state = self.session.module.__dict__
-            sys.modules[modname] = self.session.module
+        modname = 'studentmod'
+        spec = importlib.util.spec_from_loader(modname, loader=None)
+        self.session.module = importlib.util.module_from_spec(spec)
+        self.current_state.update(self.session.module.__dict__)
+        sys.modules[modname] = self.session.module
 
-            def runnable():
-                exec(self.session.code, self.current_state)
-        else:
-            def runnable():
-                importlib.reload(self.session.module)
+        def runnable():
+            exec(self.session.code, self.current_state)
 
         self.controlled_run(runnable)
         self.executed = True
