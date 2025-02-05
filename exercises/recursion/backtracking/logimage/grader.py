@@ -30,98 +30,97 @@ def coloriable(rangee, k):
 
 
 def completable(contraintes, rangee):
-    if len(contraintes) == 0:
+    if verifie(contraintes, rangee):
         return True
-    elif len(rangee) == 0:
+    if len(rangee) == 0:
         return False
-    elif verifie(contraintes, rangee):
-        return True
 
-    # cas 1
+    # essai 1
     k = contraintes[0]
     if coloriable(rangee, k) and completable(contraintes[1:], rangee[k+1:]):
         return True
-
-    # cas 2
+    # essai 2
     if rangee[0] == 0 and completable(contraintes, rangee[1:]):
         return True
-
-    # échec
+    # échec des deux essais
     return False
 
 
-begin_test('Exécution sans erreur')
-execute_source()
-assert_output("")
-assert_no_exception()
+def solutions(contraintes, rangee):
+    def aux(contraintes, rangee, i, acc):
+        if verifie(contraintes, rangee):
+            return [acc.copy()]
+        if len(rangee) == 0:
+            return []
+
+        res = []
+        # essai 1 : en coloriant tout de suite
+        k = contraintes[0]
+        if coloriable(rangee, k):
+            acc[i:i+k] = [1] * k
+            res.extend(aux(contraintes[1:], rangee[k+1:], i+k+1, acc))
+        # essai 2 : en coloriant plus tard
+        if rangee[0] == 0:
+            acc[i] = 0
+            res.extend(aux(contraintes, rangee[1:], i+1, acc))
+        # échec des deux essais
+        return res
+
+    return aux(contraintes, rangee, 0, [0] * len(rangee))
+
+
+test('Exécution sans erreur', output='')
 
 begin_test_group('Question 1 - Fonction <code>longueurs_blocs</code>')
+test_function_code("longueurs_blocs")
 
-begin_test('Respect des consignes')
-assert_defines_function("longueurs_blocs")
-
-instances = [[], [0], [1]]
+instances = [[], [0], [1]] + [[randint(0, 1)
+                               for i in range(randint(10, 20))]
+                              for _ in range(10)]
 for lst in instances:
-    begin_test(f'Longueurs des blocs dans {lst} (test fixe)')
-    evaluate(f'longueurs_blocs({lst})')
-    assert_output('')
-    assert_result(longueurs_blocs(lst))
-
-instances = [[randint(0, 1) for i in range(randint(10, 20))]
-             for _ in range(10)]
-for lst in instances:
-    begin_test(f'Longueurs des blocs dans {lst} (test aléatoire)')
-    evaluate(f'longueurs_blocs({lst})')
-    assert_output('')
-    assert_result(longueurs_blocs(lst))
+    test_function_call('longueurs_blocs', lst, reference=longueurs_blocs)
 
 begin_test_group('Question 2 - Fonction <code>verifie</code>')
+test_function_code("verifie")
 
-instances = [([], []), ([1], []),
-             ([], [0]), ([1], [0]), ([1], [1]),
-             ([1], [0, 1]), ([1], [1, 0]), ([1], [0, 0]),
-             ([2], [0, 1]), ([2], [1, 0]), ([2], [0, 0]),
-             ([3], [0, 0, 0]), ([3], [1, 0, 0]),
-             ([3], [0, 0, 1]), ([3], [0, 1, 0]),
-             ([3], [0, 1, 1]), ([3], [1, 1, 0]),
-             ([3], [1, 0, 1]), ([3], [1, 1, 1]),
-             ([2], [1, 0, 1]), ([1, 2], [0, 0, 0]),
-             ([1, 1], [0, 1, 0]),
-             ([1, 1], [0, 0, 0])]
+instances_base = [([], []), ([1], []), ([], [0])]
+instances_triv = [([1], [1]), ([1], [0, 1]), ([1], [1, 0]),
+                  ([2], [1, 1]), ([3], [1, 1, 1])]
+instances_gen = [([1], [0]), ([1], [0, 0]),
+                 ([2], [0, 1]), ([2], [1, 0]), ([2], [0, 0]),
+                 ([3], [0, 0, 0]),
+                 ([3], [1, 0, 0]), ([3], [0, 0, 1]), ([3], [0, 1, 0]),
+                 ([3], [0, 1, 1]), ([3], [1, 1, 0]), ([3], [1, 0, 1]),
+                 ([2], [1, 0, 1]),
+                 ([1, 1], [0, 0, 0]),
+                 ([1, 1], [1, 0, 0]), ([1, 1], [0, 1, 0]), ([1, 1], [0, 0, 1]),
+                 ([1, 1], [1, 1, 0]), ([1, 1], [0, 1, 1]),
+                 ([1, 1], [1, 1, 1]),
+                 ([1, 2], [0, 0, 0])]
 
-begin_test('Respect des consignes')
-assert_defines_function("verifie")
-assert_calls_function("verifie", "longueurs_blocs")
-
-for contraintes, rangee in instances:
-    begin_test(f'Vérification (test fixe)')
-    evaluate(f'verifie({contraintes}, {rangee})')
-    assert_output('')
-    assert_result(verifie(contraintes, rangee))
+for contraintes, rangee in instances_base + instances_gen:
+    test_function_call('verifie', contraintes, rangee, reference=verifie)
 
 begin_test_group('Question 3 - Fonction <code>coloriable</code>')
+test_function_code("coloriable")
 
-begin_test('Respect des consignes')
-assert_defines_function("coloriable")
-
-instances_col = [([0, 0, 1], 0), ([0, 0, 1], 1),
-                 ([0, 0, 1], 2), ([0, 0, 1], 3), ([0, 0, 1], 4)]
+instances_col = [([], 0), ([], 1)]
+instances_col.extend(([0, 0, 1], i) for i in range(5))
 
 for rangee, k in instances_col:
-    begin_test(f'Coloriable (test fixe)')
-    evaluate(f'coloriable({rangee}, {k})')
-    assert_output('')
-    assert_result(coloriable(rangee, k))
-    assert_no_global_change()
+    test_function_call('coloriable', rangee, k, reference=coloriable)
 
 begin_test_group('Question 4 - Fonction <code>completable</code>')
+test_function_code("completable")
 
-begin_test('Respect des consignes')
-assert_defines_function("completable")
-assert_recursion("completable([1, 1], [0, 0, 1])")
+for contraintes, rangee in instances_base + instances_triv + instances_gen:
+    test_function_call('completable', contraintes, rangee,
+                       reference=completable)
 
-for contraintes, rangee in instances:
-    begin_test(f'Complétable (test fixe)')
-    evaluate(f'completable({contraintes}, {rangee})')
-    assert_output('')
-    assert_result(completable(contraintes, rangee))
+begin_test_group('Question 5 - Fonction <code>solutions</code>')
+test_function_code("solutions")
+
+for contraintes, rangee in instances_base + instances_triv + instances_gen:
+    test_function_call('solutions', contraintes, rangee,
+                       reference=solutions)
+test_function_call('solutions', [1, 2, 1], [0] * 10, reference=solutions)

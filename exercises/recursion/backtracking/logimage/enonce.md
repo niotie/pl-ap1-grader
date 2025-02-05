@@ -67,3 +67,9 @@ L'algorithme fonctionne comme suit :
 
 4. *(plat de résistance)* Écrire la fonction récursive 
    `completable(contraintes, rangee)`. 
+
+5. *(dessert)* Écrire une fonction récursive 
+   `solutions(contraintes, rangee)` recevant les mêmes arguments que la
+   fonction précédente et renvoyant la liste des solutions possibles, c'est à
+   dire la liste des rangées vérifiant les contraintes que l'on peut former
+   en remplaçant certains 0 par des 1 dans `rangee`. 

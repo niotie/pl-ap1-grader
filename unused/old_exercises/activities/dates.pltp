@@ -1,0 +1,78 @@
+title=Manipulation de dates
+
+introduction==
+
+# Présentation du problème
+
+Il existe de très nombreuses façons de compter les jours et les années à
+travers les époques, les régions et les cultures. Cette diversité rend la
+manipulation de dates par des programmes informatiques assez complexe.
+
+Pour simplifier, nous allons ici nous intéresser à des dates dans un calendrier
+idéalisé, le calendrier actuellement utilisé en France, mais dont on aurait
+prolongé la validité arbitrairement loin dans le passé et dans le futur (on
+appelle ce calendrier *Grégorien proleptique*).
+
+L'avantage d'utiliser un calendrier simplifié de ce genre, c'est qu'on peut
+plus facilement raisonner par rapport à une origine fixée (par exemple le
+01/01/01, premier janvier de l'an 1, aussi appelé "jour 1"). Cette date est
+également considérée comme le début de l'ère dite *commune*, en latin *era
+vulgaris*.
+
+Une fois une origine des dates fixée et un calendrier suffisamment régulier
+choisi, il est possible de numéroter les jours qui se sont écoulés entre ce
+jour 1 et n'importe quelle date représentée par un triplet (jour, mois, année).
+Dans ce projet, nous allons nous intéresser au calcul du "numéro de jour" d'une
+date donnée, c'est à dire le nombre de jours qui l'ont précédé depuis le
+01/01/01 plus 1 (le 0/01/01 étant considéré comme le jour numéro 1). C'est
+cette convention qui est utilisé par Python (et d'autres langages de
+programmation) pour représenter les dates.
+
+Dans ce mini-projet nous nous servirons de ce "numéro de jour" pour réaliser 
+divers calculs sur les dates, 
+par exemple le jour de la semaine auquel correspond une date donnée.
+Ce travail peut être fait entièrement en utilisant les notions vues aux
+chapitres 1 et 2 du cours (en particulier sans boucles). L'utilisation du
+module `datetime` est interdite.
+
+Voici un exemple d'exécution du programme terminé :
+
+```
+Jour : 29
+Mois : 12
+Année : 2014
+La date choisie est 29/12/2014.
+L'année 2014 n'est pas bissextile.
+Le mois 12/2014 compte 31 jours.
+Cette date est en hiver.
+Il s'est écoulé 735233 jours entre le 1/1/1 et le 1/1/2014.
+Il s'est écoulé 334 jours entre le 1/1/2014 et le 1/12/2014.
+Le 29/12/2014 est le jour numéro 363 de l'année 2014.
+C'est le jour numéro 735596 de notre ère.
+C'est un lundi.
+C'est le jour 1 de la semaine 1 de l'année ISO 2015.
+```
+
+==
+
+
+
+@ dates_01_saisir_date.pl
+@ dates_02_bissextile.pl
+@ dates_03_mois_correct.pl
+@ dates_04_jours_du_mois.pl
+@ dates_05_date_correcte.pl
+@ dates_06_saison.pl
+@ dates_07_jours_avant_annee.pl
+@ dates_08_jours_avant_mois.pl
+@ dates_09_numero_jour_dans_annee.pl
+@ dates_10_numero_jour_origine.pl
+@ dates_11_nom_jour.pl
+@ dates_12_numero_semaine.pl
+
+
+
+
+
+
+
